@@ -1,0 +1,15 @@
+tcp:
+  server:
+    host: 127.0.0.1
+    tcp-port: 8011
+    boss-count: 1
+    worker-count: 4
+    keep-alive: true
+    tcp-nodelay: true
+    backlog: 1000
+  client:
+    host: 127.0.0.1
+    tcp-port: 8012
+    boss-count: 1
+    keep-alive: true
+    backlog: 1000
