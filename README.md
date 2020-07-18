@@ -1,9 +1,12 @@
 # Getting Started
 SpringBoot Web and Netty TCP Server/Client and Custom Fixedlength parser
 
-# Springboot web request example
+# Springboot web request netty TCP client example
+This is an example of receiving a response after request using netty tcp client when requesting url.
+
 Client port : 8012
-Need other TCP server
+
+Need other TCP server(Copy this project then Change TCP server port and Run)
 
 ```
 curl http://localhost:8080/send/fixed
