@@ -15,5 +15,5 @@ public @interface FixedLengthElement {
 
     char padChar() default ' ';
 
-    FeatureType type() default FeatureType.DEFAULT;
+    PadMode padMode() default PadMode.RIGHT;
 }

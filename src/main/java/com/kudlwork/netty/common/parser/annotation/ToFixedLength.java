@@ -9,4 +9,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ToFixedLength {
 
+	VariableIndexType type() default VariableIndexType.NONE;
+
+	int startIndex() default 0;
+
+	int size() default 0;
 }

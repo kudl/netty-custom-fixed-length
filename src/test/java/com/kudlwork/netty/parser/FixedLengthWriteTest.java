@@ -9,10 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
@@ -51,7 +48,7 @@ public class FixedLengthWriteTest {
         productVariableRoot.setProductItems(productItems);
         productVariableRoot.setProductFooter(productFooter);
 
-        String fixedLengthStr = new FixedLengthWriter().write(productVariableRoot);
+        String fixedLengthStr = new FixedLengthWriter(productItems.size()).write(productVariableRoot);
 
         assertNotNull(fixedLengthStr);
     }
@@ -59,15 +56,15 @@ public class FixedLengthWriteTest {
     @Test
     public void fixedLengthTest() throws ExecutionException, InterruptedException {
         List<String> data = Collections.synchronizedList(new ArrayList<>());
-        List<ProductVariableRoot> productVariableRoots = Collections.synchronizedList(new ArrayList<>());
-        List<ProductVariableRoot> mockProductVariableRoots = Collections.synchronizedList(new ArrayList<>());
+        List<ProductVariableRootV2> productVariableRoots = Collections.synchronizedList(new ArrayList<>());
+        List<ProductVariableRootV2> mockProductVariableRoots = Collections.synchronizedList(new ArrayList<>());
 
-        for(int i = 0; i < 90; i++) {
+        for (int i = 0; i < 90; i++) {
             ProductHeader productHeader = mockProductHeader();
             ProductRequest productRequest = mockProductRequest(i + 1);
             List<ProductItem> productItems = mockProductItems();
             ProductFooter productFooter = mockProductFooter(i + 1);
-            ProductVariableRoot productVariableRoot = new ProductVariableRoot();
+            ProductVariableRootV2 productVariableRoot = new ProductVariableRootV2();
             productVariableRoot.setProductHeader(productHeader);
             productVariableRoot.setProductRequest(productRequest);
             productVariableRoot.setProductItems(productItems);
@@ -78,22 +75,25 @@ public class FixedLengthWriteTest {
         ForkJoinPool forkJoinPool = new ForkJoinPool(POOL_SIZE);
         forkJoinPool.submit(() -> {
             mockProductVariableRoots.parallelStream().forEach(p -> {
-                data.add(new FixedLengthWriter().write(p));
+                data.add(new FixedLengthWriter(2).write(p));
             });
         }).get();
 
         ForkJoinPool joinPool = new ForkJoinPool(POOL_SIZE);
         joinPool.submit(() -> {
             data.parallelStream().forEach(p -> {
-                productVariableRoots.add(new FixedLengthReader().read(p, ProductVariableRoot.class));
+                productVariableRoots.add(new FixedLengthReader().read(p, ProductVariableRootV2.class));
             });
         }).get();
 
-        assertNotNull(productVariableRoots);
-        assertNotNull(data);
+        mockProductVariableRoots.sort(Comparator.comparing(x -> x.getProductRequest().getId()));
+        productVariableRoots.sort(Comparator.comparing(x -> x.getProductRequest().getId()));
 
+        assertNotNull(data);
+        assertNotNull(productVariableRoots);
         assertEquals(mockProductVariableRoots.size(), data.size());
         assertEquals(mockProductVariableRoots.size(), productVariableRoots.size());
+        assertEquals(mockProductVariableRoots.get(10).getProductRequest().getId(), productVariableRoots.get(10).getProductRequest().getId());
     }
 
     private ProductHeader mockProductHeader() {

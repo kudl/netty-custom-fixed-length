@@ -21,7 +21,7 @@ public class SampleVariableHandler extends ChannelInboundHandlerAdapter {
         }
 
         ProductVariableRoot productVariableRoot = (ProductVariableRoot)message;
-        String readMessage = new FixedLengthWriter().write(productVariableRoot);
+        String readMessage = new FixedLengthWriter(productVariableRoot.getProductItems().size()).write(productVariableRoot);
 
         log.info("ProductVariableRoot channelRead : {}", readMessage);
         ctx.writeAndFlush(readMessage);

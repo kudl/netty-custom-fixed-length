@@ -21,7 +21,7 @@ public class ClientSampleVariableHandler extends ChannelInboundHandlerBaseAdapte
         }
 
         ProductVariableRoot productVariableRoot = (ProductVariableRoot) message;
-        String responseMessage = new FixedLengthWriter().write(productVariableRoot);
+        String responseMessage = new FixedLengthWriter(productVariableRoot.getProductItems().size()).write(productVariableRoot);
 
         messageReceived(responseMessage);
         log.info("ProductVariableRoot receives message: {}", responseMessage);

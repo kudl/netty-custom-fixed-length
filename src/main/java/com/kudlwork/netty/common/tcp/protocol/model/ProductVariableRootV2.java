@@ -10,7 +10,7 @@ import java.util.List;
 
 @Data
 @ToFixedLength(type = VariableIndexType.BEGIN, startIndex = 41, size = 5)
-public class ProductVariableRoot {
+public class ProductVariableRootV2 {
 
     @FixedLengthElementWrapper(seq = 1)
     private ProductHeader productHeader;

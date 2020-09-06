@@ -23,8 +23,8 @@ import static com.kudlwork.netty.common.CommonConstants.DEFAULT_CHARSET;
 @SuppressWarnings("unchecked")
 public class FixedLengthReader extends FixedLengthBase {
 
-    private int variableCount = 0;
-    private String content = "";
+    private int variableCount;
+    private String content;
     private PropertyEditor propertyEditor;
 
     public FixedLengthReader() {
@@ -33,7 +33,14 @@ public class FixedLengthReader extends FixedLengthBase {
 
     public <T> T read(String content, Class<T> clazz) {
         try {
+            ToFixedLength toFixedLength = clazz.getDeclaredConstructor().newInstance().getClass().getAnnotation(ToFixedLength.class);
+            if (Objects.isNull(toFixedLength)) {
+                return null;
+            }
+
             this.content = content;
+            this.variableCount = toFixedLength.type().getVariableCount(content, toFixedLength.startIndex(), toFixedLength.size());
+
             return invokeAnnotations(clazz);
         } catch (Exception e) {
             log.error("Fixed Length Read Fail", e);
@@ -41,10 +48,11 @@ public class FixedLengthReader extends FixedLengthBase {
         }
     }
 
-    private <T> T invokeAnnotations(Class<T> clazz) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException, InstantiationException, UnsupportedEncodingException {
+    private <T> T invokeAnnotations(Class<T> clazz) throws IllegalAccessException, NoSuchMethodException,
+            InvocationTargetException, InstantiationException, UnsupportedEncodingException {
         if (StringUtils.isEmpty(content)) {
-            log.error("Empty content");
-            throw new FixedLengthException("Empty content");
+            log.error("No Content");
+            throw new FixedLengthException("No Content");
         }
 
         Object object = clazz.getDeclaredConstructor().newInstance();
@@ -85,28 +93,22 @@ public class FixedLengthReader extends FixedLengthBase {
             }
 
             return fieldGroup;
-        } else {
-            return invokeAnnotations(field.getType());
-        }
-    }
-
-    private Object elementMapping(Field field, FixedLengthElement element) throws UnsupportedEncodingException {
-        Object fieldObject = extract(field, element.maxLength(), element.padChar());
-
-        if(element.type().equals(FeatureType.VARIABLE_COUNT)) {
-            variableCount = (int) fieldObject;
         }
 
-        return fieldObject;
+        return invokeAnnotations(field.getType());
     }
 
-    private Object extract(Field field, int maxLength, char padChar) throws UnsupportedEncodingException {
+    private Object elementMapping(Field field, FixedLengthElement element) {
+        return extract(field, element.maxLength(), element.padChar());
+    }
+
+    private Object extract(Field field, int maxLength, char padChar) {
         StringBuffer fieldValue = new StringBuffer();
         StringBuffer newContent = new StringBuffer();
 
         AtomicInteger index = new AtomicInteger();
-        for(char ch : content.toCharArray()) {
-            if(maxLength >= index.addAndGet(String.valueOf(ch).getBytes(DEFAULT_CHARSET).length)) {
+        for (char ch : content.toCharArray()) {
+            if (maxLength >= index.addAndGet(String.valueOf(ch).getBytes(DEFAULT_CHARSET).length)) {
                 fieldValue.append(ch);
             } else {
                 newContent.append(ch);
@@ -116,13 +118,13 @@ public class FixedLengthReader extends FixedLengthBase {
         content = newContent.toString();
         findPropertyEditor(field);
 
-        propertyEditor.setAsText(fieldValue.substring(getFieldIndex(fieldValue.toString(), padChar)));
+        propertyEditor.setAsText(fieldValue.toString().trim());
         return propertyEditor.getValue();
     }
 
     private void findPropertyEditor(Field field) {
         propertyEditor = CustomPropertyEditorManager.defaultEditors().get(field.getType());
-        if(Objects.isNull(propertyEditor)) {
+        if (Objects.isNull(propertyEditor)) {
             propertyEditor = PropertyEditorManager.findEditor(field.getType());
         }
     }
@@ -130,16 +132,16 @@ public class FixedLengthReader extends FixedLengthBase {
     private int getFieldIndex(String fieldValue, char padChar) {
         char[] fieldChar = fieldValue.toCharArray();
 
-        for(int i = 0; i < fieldChar.length; i++) {
-            if(i == fieldChar.length - 1 && fieldChar[i] == padChar) {
+        for (int i = 0; i < fieldChar.length; i++) {
+            if (i == fieldChar.length - 1 && fieldChar[i] == padChar) {
                 return i + 1;
             }
 
-            if(i == fieldChar.length - 1 || fieldChar[i] != padChar) {
+            if (i == fieldChar.length - 1 || fieldChar[i] != padChar) {
                 return i;
             }
 
-            if(fieldChar[i + 1] != padChar) {
+            if (fieldChar[i + 1] != padChar) {
                 return i + 1;
             }
         }
